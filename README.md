@@ -149,6 +149,21 @@ $ gist REPORT.md
 3. Настройте сборочную процедуру на **TravisCI**.
 4. Настройте [Coveralls.io](https://coveralls.io/).
 
+
+
+1. В banking в CMakeLists пишем:
+
+cmake_minimum_required(VERSION 3.4)
+
+project(banking)
+
+add_library(banking STATIC Account.cpp Transaction.cpp)
+
+2. Создадим через mkdit папку с названием test.
+В ней соответсвенно 3 файла: test-account.cpp
+test-Transaction.cpp test1.cpp
+
+
 ## Links
 
 - [C++ CI: Travis, CMake, GTest, Coveralls & Appveyor](http://david-grs.github.io/cpp-clang-travis-cmake-gtest-coveralls-appveyor/)
