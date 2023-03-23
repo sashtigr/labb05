@@ -19,4 +19,3 @@ endif()
 target_include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/banking)
 
 target_link_libraries(test PRIVATE gtest gtest_main gmock_main banking)
-

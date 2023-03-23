@@ -1,55 +1,50 @@
-name: bank
+name: test_banking
 
 on:
-  push:
-    branches: master
-
   workflow_dispatch:
 
+
 jobs:
-  build_lib:
+  banking:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-      - name: Build banking_lib
-        shell: bash
-        run: |
-          cd banking
-          mkdir built && cd built
-          cmake ..
-          cmake --build .
+    - name: update
+      run:  |
+        git submodule update --init --recursive
+        sudo apt install lcov
+        sudo apt install g++
+    - name: build banking
+      shell: bash
+      run: |
+        cd lab_5/banking
+        mkdir build && cd build
+        cmake ..
+        cmake --build .
+    - name: test banking
+      run: |
+        cd lab_5
+        mkdir build && cd build
+        CXX=/usr/bin/g++
+        cmake -DCOVERAGE=1 ..
+        cmake --build .
+        ./test
+        lcov -t "banking" -o lcov.info -c -d .
+        lcov --remove lcov.info '/home/runner/work/TIMP/TIMP/lab_5/third-party/GTest/*' -o lcov.info ###
+        lcov --remove lcov.info '/usr/include/*' -o lcov.info
 
-  Test_banking:
-    runs-on: ubuntu-latest
+    - name: CovBeg
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel: true
+        path-to-lcov: ./lab_5/build/lcov.info
+        coveralls-endpoint: https://coveralls.io
 
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: prepare environment
-        run:  |
-              sudo apt install git && git submodule update --init
-              sudo apt install lcov
-              sudo apt install g++-7
-
-      - name: Test
-        run: |
-          mkdir built && cd built
-          CXX=/usr/bin/g++-7 cmake -DCOVERAGE=1 ..
-          cmake --build .
-          ./testBanking
-          lcov -t "banking" -o lcov.info -c -d .
-      - name: Coveralls Parallel
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          parallel: true
-          path-to-lcov: ./built/lcov.info
-          coveralls-endpoint: https://coveralls.io
-
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          parallel-finished: true
+    - name: CovFin
+      uses: coverallsapp/github-action@master
+      with:
+       github-token: ${{ secrets.github_token }}
+       parallel-finished: true
