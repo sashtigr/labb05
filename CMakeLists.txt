@@ -1,21 +1,31 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.18)
 
-SET(COVERAGE OFF CACHE BOOL "Coverage")
-SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(TestRunning)
+option(BUILD_TESTS "Build tests" ON)
+option(COVERAGE "Coverage" ON)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third-party/GTest "gtest")
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/banking)
+project(banking)
 
-#add_executable(test ${CMAKE_CURRENT_SOURCE_DIR}/test/test-account.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/test-transaction.cpp)
-add_executable(test ${CMAKE_CURRENT_SOURCE_DIR}/test/test1.cpp)
+add_library(${PROJECT_NAME} STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/banking/Account.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/banking/Transaction.cpp
+        )
 
-if (COVERAGE)
-    target_compile_options(test PRIVATE --coverage)
-    target_link_libraries(test PRIVATE --coverage)
+target_include_directories(${PROJECT_NAME} PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>"
+        )
+
+if (BUILD_TESTS)
+    if (COVERAGE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    endif()
+    enable_testing()
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third-party/gtest)
+    add_executable(tests
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp)
+    target_link_libraries(tests ${PROJECT_NAME} gtest_main gmock_main)
+    add_test(NAME unit_tests COMMAND tests)
 endif()
-
-target_include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/banking)
-
-target_link_libraries(test PRIVATE gtest gtest_main gmock_main banking)
