@@ -1,6 +1,0 @@
-[submodule "third-party/googletest"]
-	path = third-party/googletest
-	url = git@github.com:google/googletest.git
-[submodule "third-party/coveralls-cmake"]
-	path = third-party/coveralls-cmake
-	url = git@github.com:JoakimSoderberg/coveralls-cmake.git
