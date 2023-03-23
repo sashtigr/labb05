@@ -1,5 +1,16 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.16.3)
+project(Bank)
 
-project(banking)
+add_library(
+	banking STATIC
+		Account.cpp
+		Account.h
+		Transaction.cpp
+		Transaction.h
+)
 
-add_library(banking STATIC Account.cpp Transaction.cpp)
+set_target_properties(
+	banking PROPERTIES
+	CXX_STANDARD 11
+	CXX_STANDARD_REQUIRED oN
+)
