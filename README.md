@@ -163,6 +163,194 @@ add_library(banking STATIC Account.cpp Transaction.cpp)
 В ней соответсвенно 3 файла: test-account.cpp
 test-Transaction.cpp test1.cpp
 
+3. ## В test-account пишем
+#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+
+#include <Account.h>
+
+
+class MockAccount: public Account{
+public:
+    MockAccount(int id, int balance):Account(id, balance){}
+
+    MOCK_METHOD(int, GetBalance, (), (const, override));
+    MOCK_METHOD(void, ChangeBalance, (int), (override));
+    MOCK_METHOD(void, Lock, (), (override));
+    MOCK_METHOD(void, Unlock, (), (override));
+};
+
+
+TEST(Account, Init)
+{
+    MockAccount ac(1, 150);
+    EXPECT_EQ(ac.GetBalance(), 150);
+    EXPECT_EQ(ac.id(), 1);
+}
+
+TEST(Account, GetBalance)
+{
+    MockAccount ac(1,150);
+    EXPECT_EQ(ac.GetBalance(), 150);
+}
+
+TEST(Account, ChangeBalance)
+{
+    MockAccount ac(1, 150);
+    EXPECT_THROW(ac.ChangeBalance(50), std::runtime_error);
+    ac.Lock();
+    ac.ChangeBalance(50);
+    EXPECT_EQ(ac.GetBalance(), 200);
+}
+
+TEST(Account, Lock)
+{
+    MockAccount ac(1, 150);
+    ac.Lock();
+    EXPECT_THROW(ac.Lock(), std::runtime_error);
+}
+
+TEST(Account, Unlock)
+{
+    MockAccount ac(1, 150);
+    ac.Lock();
+    ac.Unlock();
+    EXPECT_THROW(ac.ChangeBalance(50), std::runtime_error);
+}
+
+
+
+## В test-Transaction пишем
+
+#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+
+#include <Transaction.h>
+#include <Account.h>
+
+
+class MockAccount: public Account{
+public:
+    MockAccount(int id, int balance):Account(id, balance){}
+
+    MOCK_METHOD(int, GetBalance, (), (const, override));
+    MOCK_METHOD(void, ChangeBalance, (int), (override));
+    MOCK_METHOD(void, Lock, (), (override));
+    MOCK_METHOD(void, Unlock, (), (override));
+};
+
+class MockTransaction: public Transaction{
+private:
+    MOCK_METHOD(void, SaveToDataBase, (Account& from, Account& to, int sum), (override));
+};
+
+TEST(Transaction, Make)
+{
+    MockAccount from_ac(1,1000);
+    MockAccount to_ac(2, 2000);
+    MockTransaction tr;
+
+    EXPECT_THROW(tr.Make(from_ac,from_ac, 0), std::logic_error);
+    EXPECT_THROW(tr.Make(from_ac,to_ac, 0), std::invalid_argument);
+    EXPECT_THROW(tr.Make(from_ac,to_ac,-5), std::invalid_argument);
+    EXPECT_THROW(tr.Make(from_ac, to_ac, 50), std::logic_error);
+}
+
+
+
+
+##В test1 пишем
+
+#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include <Transaction.h>
+#include <Account.h>
+
+
+class MockAccount: public Account{
+public:
+    //MockAccount(int id, int balance):Account(id, balance){}
+    //MOCK_METHOD(void, Unlock, ());
+    MockAccount(int id, int balance):Account(id, balance){}
+
+    MOCK_METHOD(int, GetBalance, (), (const, override));
+    MOCK_METHOD(void, ChangeBalance, (int), (override));
+    MOCK_METHOD(void, Lock, (), (override));
+    MOCK_METHOD(void, Unlock, (), (override));
+};
+TEST(Account, Init){
+    MockAccount test(1,100);
+    EXPECT_EQ(test.GetBalance(),100);
+    EXPECT_EQ(test.id(),1);
+}
+
+class MockTransaction: public Transaction{
+public:
+    MOCK_METHOD(void, SaveToDataBase, (Account& from, Account& to, int sum), (override));
+};
+
+TEST(Account, GetBalance){
+MockAccount acc(1,100);
+EXPECT_EQ(acc.Account::GetBalance(), 100);
+}
+
+TEST(Account, ChangeBalance){
+MockAccount acc(0, 100);
+EXPECT_THROW(acc.Account::ChangeBalance(50), std::runtime_error);
+acc.Account::Lock();
+acc.Account::ChangeBalance(50);
+EXPECT_EQ(acc.Account::GetBalance(), 150);
+
+}
+
+TEST(Account, Lock) {
+    MockAccount acc(15,213);
+    acc.Lock();
+    EXPECT_THROW(acc.Lock(), std::runtime_error);
+}
+
+TEST(Account, Unlock){
+    MockAccount acc(0, 100);
+EXPECT_CALL(acc, Unlock()).Times(1);
+acc.Unlock();
+}
+
+TEST(Transaction, Make){
+MockAccount from_acc(15,17650);
+MockAccount to_acc(13, 18435);
+MockTransaction tr;
+EXPECT_THROW(tr.Make(from_acc,from_acc,0),std::logic_error);
+EXPECT_THROW(tr.Make(from_acc,to_acc,0),std::logic_error);
+EXPECT_THROW(tr.Make(from_acc,to_acc,-5),std::invalid_argument);
+}
+
+TEST(Transaction, SaveToDataBase){
+MockAccount from_acc(15,17650);
+MockAccount to_acc(13, 18435);
+MockTransaction tr;
+
+
+}
+
+
+
+##4. Cоздадим папку third-party
+откроем ее через теминал и напишем
+
+git submodule add git@github.com:google/googletest.git
+
+git submodule add git@github.com:JoakimSoderberg/coveralls-cmake.git
+
+git add git commit git push
+
+
+5, В первос пункте создали CMakeLists.
+Через терминал заходим в banking
+
+cmake . -B _build        cd _build     make
+
+
+6.
 
 ## Links
 
