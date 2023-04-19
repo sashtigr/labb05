@@ -1,89 +1,33 @@
+#include <Account.h>
+#include <Transaction.h>
 #include <gtest/gtest.h>
 
-#include <Transaction.h>
-#include <Account.h>
-
-TEST(Transaction, fee_test) {
-    Account John(228, 101);
-    Account James(1337, 0);
-
-    Transaction transaction;
-    EXPECT_TRUE(transaction.Make(John, James, 100));
-
-    Account Jack(111, 100);
-    EXPECT_FALSE(transaction.Make(Jack, James, 100));
-
-    Jack.Lock();
-    Jack.ChangeBalance(-10);
-    Jack.Unlock();
-    EXPECT_FALSE(transaction.Make(Jack, James, 100));
-}
-
-TEST(Transaction, id_is_equal) {
-    Account John(228, 1);
-    Account Peter(228, 1);
-
-    Transaction transaction;
-    try {
-        transaction.Make(John, Peter, 100);
-        FAIL() << "expected std::logic_error";
-    } catch (std::logic_error& err){
-        EXPECT_EQ(err.what(), std::string("invalid action"));
-    } catch(...) {
-        FAIL() << "expected std::logic_error";
-    }
-}
-
-TEST(Transaction, negative_sum) {
-    Account John(228, 123);
-    Account Peter(123, 0);
-
-    Transaction transaction;
-    try {
-        transaction.Make(John, Peter, -12);
-        FAIL() << "expected std::invalid argument";
-    } catch(std::invalid_argument& err) {
-        EXPECT_EQ(err.what(), std::string("sum can't be negative"));
-    } catch(...) {
-        FAIL() << "expected std::invalid argument";
-    }
-}
-
-TEST(Transaction, low_sum) {
-    Account John(228, 1200);
-    Account Peter(123, 0);
-
-    Transaction transaction;
-    try {
-        transaction.Make(John, Peter, 99);
-        FAIL() << "expected std::logic_error";
-    } catch(std::logic_error& err) {
-        EXPECT_EQ(err.what(), std::string("too small"));
-    } catch(...) {
-        FAIL() << "expected std::logic error";
-    }
-}
-
-TEST(Transaction, too_big_fee) {
-    Account John(128, 400);
-    Account Jake(200, 0);
-
-    Transaction transaction;
-    transaction.set_fee(101);
-
-    EXPECT_FALSE(transaction.Make(John, Jake, 200));
-}
-
-TEST(Account, account_tests) {
-    Account account_1(100, 1000);
-
-    EXPECT_EQ(1000, account_1.GetBalance());
-
-    account_1.Lock();
-    account_1.ChangeBalance(100);
-    EXPECT_ANY_THROW(account_1.Lock());
-    EXPECT_EQ(account_1.GetBalance(), 1100);
-
-    account_1.Unlock();
-    EXPECT_ANY_THROW(account_1.ChangeBalance(100));
+TEST(Transaction, Banking){
+//создаём константы. base_fee для полноценного теста должен быть хотя бы 51.
+    const int base_A = 5000, base_B = 5000, base_fee = 100;
+//создаём тестовые объекты
+    Account Alice(0,base_A), Bob(1,base_B);
+    Transaction test_tran;
+//проверяем конструктор по умолчанию и сеттеры-геттеры
+    ASSERT_EQ(test_tran.fee(), 1);
+    test_tran.set_fee(base_fee);
+    ASSERT_EQ(test_tran.fee(), base_fee);
+//проверяем случаи когда транзакция не проходит
+    ASSERT_THROW(test_tran.Make(Alice, Alice, 1000), std::logic_error);
+    ASSERT_THROW(test_tran.Make(Alice, Bob, -50), std::invalid_argument);
+    ASSERT_THROW(test_tran.Make(Alice, Bob, 50), std::logic_error);
+    if (test_tran.fee()2-1 >= 100)
+        ASSERT_EQ(test_tran.Make(Alice, Bob, test_tran.fee()2-1), false);
+//проверяем, что всё правильно лочится
+    Alice.Lock();
+    ASSERT_THROW(test_tran.Make(Alice, Bob, 1000), std::runtime_error);
+    Alice.Unlock();
+//проверяем что если входные параметры правильные, то транзакция проходит правильно
+    ASSERT_EQ(test_tran.Make(Alice, Bob, 1000), true);
+    ASSERT_EQ(Bob.GetBalance(), base_B+1000);
+    ASSERT_EQ(Alice.GetBalance(), base_A-1000-base_fee);
+//проверяем что транзакция не проходит, если не хватает средств
+    ASSERT_EQ(test_tran.Make(Alice, Bob, 3900), false);
+    ASSERT_EQ(Bob.GetBalance(), base_B+1000);
+    ASSERT_EQ(Alice.GetBalance(), base_A-1000-base_fee);
 }
