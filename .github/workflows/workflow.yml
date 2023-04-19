@@ -1,44 +1,38 @@
-name: CI
-on: [ push ]
+name: CMake
+
+on:
+ push:
+  branches: [main]
+ pull_request:
+  branches: [main]
+
 jobs:
-  building:
-    runs-on: ubuntu-latest
+ Tests:
 
-    steps:
-      - name: checkout
-        uses: actions/checkout@master
+  runs-on: ubuntu-latest
 
-      - name: build
-        shell: bash
-        run: |
-          git submodule update --init --recursive
-          cmake -B build
-          cd build
-          make
-  testing:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@master
+  steps:
+  - uses: actions/checkout@v3
 
-      - name: test
-        shell: bash
-        run: |
-          git submodule update --init --recursive
-          cmake -B build
-          cd build
-          make ./tests
-          ./tests
-      - name: install lcov
-        run: |
-          sudo apt-get install -y lcov
-      - name: run lcov
-        run: |
-          lcov --capture --directory build/CMakeFiles/banking.dir/banking --output-file lcov.info
-          lcov --remove lcov.info '/usr/include/*' -o lcov.info
-          lcov --remove lcov.info '/home/runner/work/lab05/lab05/third-party/gtest/*' -o lcov.info
-      - name: coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          path-to-lcov: "./lcov.info"
-          github-token: ${{ secrets.github_token }}
+  - name: Adding gtest
+    run: git clone https://github.com/google/googletest.git third-party/gtest -b release-1.11.0
+
+  - name: Install lcov
+    run: sudo apt-get install -y lcov
+
+  - name: Config banking with tests
+    run: cmake -H. -B ${{github.workspace}}/build -DBUILD_TESTS=ON
+
+  - name: Build banking
+    run: cmake --build ${{github.workspace}}/build
+
+  - name: Run tests
+    run: build/check
+
+  - name: Do lcov stuff
+    run: lcov -c -d build/CMakeFiles/banking.dir/banking/ --include *.cpp --output-file ./coverage/lcov.info
+
+  - name: Publish to coveralls.io
+    uses: coverallsapp/github-action@v1.1.2
+    with:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
